@@ -22,6 +22,18 @@ public class EmployeeController {
     EmployeeService employeeService;
 
     /**
+     * insert new employee into database server
+     * @param employee
+     * @return
+     */
+    @RequestMapping(value = "/emp", method = RequestMethod.POST)
+    @ResponseBody
+    public Msg saveEmp(Employee employee) {
+        employeeService.saveEmp(employee);
+        return Msg.success();
+    }
+
+    /**
      * 需要导入jackson包，转化结果为json对象
      * @param pn
      * @return

@@ -20,6 +20,74 @@
           integrity="sha384-mzrmE5qonljUremFsqc01SB46JvROS7bZs3IO2EmfFsd15uHvIt+Y8vEf7N7fWAU" crossorigin="anonymous">
 </head>
 <body>
+
+<!-- Modal for adding new employee data -->
+<div class="modal fade" id="empAddModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
+     aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLabel">Add Employee</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <%--form for adding new employee info--%>
+                <form id="add_emp_form" novalidate>
+                    <div class="form-group row">
+                        <label class="col-sm-3 col-form-label">Last Name</label>
+                        <div class="col-sm-9">
+                            <input type="text" class="form-control" name="empName" id="empName_add_input"
+                                   placeholder="empName" pattern="^([A-Z])[a-z]{2,15}$" required>
+                            <div class="invalid-feedback">
+                                Name should be 3-16 chars with initial capitalization.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <label class="col-sm-3 col-form-label">Email</label>
+                        <div class="col-sm-9">
+                            <input type="email" class="form-control" name="email" id="email_add_input"
+                                   placeholder="email@zxj.com"
+                                   pattern="^[A-Za-z\d]+([-_\.][A-Za-z\d]+)*@[A-Za-z\d]+\.[a-zA-Z\d]{2,4}$" required>
+                            <div class="invalid-feedback">
+                                Email format is incorrect.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <label class="col-sm-3 col-form-label form-inline">Gender</label>
+                        <div class="col-sm-9 form-inline">
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="gender" id="gender1_add_input"
+                                       value="M" checked="checked">
+                                <label class="form-check-label" for="gender1_add_input">Male</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="gender" id="gender2_add_input"
+                                       value="F">
+                                <label class="form-check-label" for="gender2_add_input">Female</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <label class="col-sm-3 col-form-label">deptName</label>
+                        <div class="col-sm-5">
+                            <%--only need to submit department Id--%>
+                            <select class="form-control" name="dId" required></select>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" id="save_emp_btn">Save changes</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <%--搭建显示页面--%>
 <div class="container">
     <%--标题--%>
@@ -31,7 +99,7 @@
     <%--按钮--%>
     <div class="row">
         <div class="col-lg-4 offset-lg-8">
-            <button class="btn btn-primary btn-sm">Add</button>
+            <button class="btn btn-primary btn-sm" id="emp_add_modal_btn">Add</button>
             <button class="btn btn-danger btn-sm">Delete</button>
         </div>
     </div>
@@ -58,9 +126,9 @@
     <%--显示分页--%>
     <div class="row">
         <%--分页信息--%>
-        <div class="col-lg-8" id="page-info-area"></div>
+        <div class="col-lg-8" id="page_info_area"></div>
         <%--分页条--%>
-        <div class="col-lg-4" id="page-nav-area">
+        <div class="col-lg-4" id="page_nav_area">
 
         </div>
     </div>
@@ -72,6 +140,7 @@
 <script src="${APP_PATH}/static/js/bootstrap.min.js"></script>
 
 <script type="text/javascript">
+    var totalRecord;
     //send ajax request for employee info after page loading
     $(function () {
         to_page(1);
@@ -124,15 +193,16 @@
 
     function build_page_info(result) {
         //remove previous pagination data
-        $("#page-info-area").empty();
+        $("#page_info_area").empty();
         //display current pagination data
-        $("#page-info-area").append("Current page: " + result.extend.pageInfo.pageNum + " | Total pages: " +
+        $("#page_info_area").append("Current page: " + result.extend.pageInfo.pageNum + " | Total pages: " +
             result.extend.pageInfo.pages + " | Total records: " + result.extend.pageInfo.total);
+        totalRecord = result.extend.pageInfo.total;
     }
 
     function build_page_nav(result) {
         //remove previous navigate page data
-        $("#page-nav-area").empty();
+        $("#page_nav_area").empty();
         //display current navigate page data
         var nav = $("<nav></nav>").attr("aria-label", "navigation example");
         var ul = $("<ul></ul>").addClass("pagination");
@@ -188,8 +258,58 @@
         // add endPage element and nextPage element
         ul.append(nextPageLi).append(endPageLi);
         nav.append(ul);
-        nav.appendTo("#page-nav-area")
+        nav.appendTo("#page_nav_area")
     }
+
+    // modal pop up when click on add button
+    $("#emp_add_modal_btn").click(function () {
+        // send ajax request to query department info, to display on pop-up modal
+        get_depts();
+        $("#empAddModal").modal({
+            backdrop:"static"
+        });
+    });
+    
+    function get_depts() {
+        $.ajax({
+            url:"${APP_PATH}/depts",
+            type:"GET",
+            success: function (result) {
+                //show department info in the select form on pop-up modal
+                $("#empAddModal select").empty();
+                $.each(result.extend.depts, function () {
+                    var optionElement = $("<option></option>").append(this.deptName).attr("value", this.deptId);
+                    optionElement.appendTo($("#empAddModal select"))
+                 })
+            }
+        });
+    }
+
+    function validate_employee_info() {
+        $("#empAddModal form").removeClass("was-validated");
+        var form = document.getElementById("add_emp_form");
+        $("#empAddModal form").addClass("was-validated");
+        return form.checkValidity();
+    }
+
+    // save button on click
+    $("#save_emp_btn").click(function () {
+        if (!validate_employee_info()){
+            return false;
+        };
+        // save employee info to server
+        $.ajax({
+            url:"${APP_PATH}/emp",
+            type:"POST",
+            data:$("#empAddModal form").serialize(),
+            success:function () {
+                // 1. close pop-up modal
+                $("#empAddModal").modal('hide');
+                // 2. go to the last page so that it shows the new employee
+                to_page(totalRecord);
+            }
+        });
+    })
 </script>
 </body>
 </html>
