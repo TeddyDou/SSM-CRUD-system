@@ -21,6 +21,25 @@ public class EmployeeController {
     @Autowired
     EmployeeService employeeService;
 
+    @RequestMapping(value = "/emp/{empId}", method = RequestMethod.PUT)
+    @ResponseBody
+    public Msg updateEmp(Employee employee) {
+        employeeService.updateEmp(employee);
+        return Msg.success();
+    }
+
+    /**
+     * select employee by empId
+     * @param empId
+     * @return
+     */
+    @RequestMapping(value = "/emp/{empId}", method = RequestMethod.GET)
+    @ResponseBody
+    public Msg getEmp(@PathVariable("empId") Integer empId) {
+        Employee employee = employeeService.getEmp(empId);
+        return Msg.success().add("emp", employee);
+    }
+
     /**
      * insert new employee into database server
      * @param employee
@@ -48,6 +67,20 @@ public class EmployeeController {
         //PageInfo封装了查询出来的结果，只需将pageinfo返回给页面即可
         PageInfo page = new PageInfo(emps, 5);
         return Msg.success().add("pageInfo", page);
+    }
+
+    /**
+     * check if input name already exists
+     * @param empName
+     * @return
+     */
+    @RequestMapping("/checkuser")
+    @ResponseBody
+    public Msg checkDuplicatedName(@RequestParam(value = "empName") String empName) {
+        if (employeeService.checkUser(empName))
+            return Msg.success();
+        else
+            return Msg.fail();
     }
 
     /**
